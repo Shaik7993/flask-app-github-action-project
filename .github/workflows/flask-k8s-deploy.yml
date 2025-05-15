@@ -28,11 +28,6 @@ jobs:
         push: true
         tags: ${{ secrets.DOCKER_USERNAME }}/flask-docker-app:latest
 
-    - name: Set up Kubeconfig
-      run: |
-        mkdir -p $HOME/.kube
-        echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > $HOME/.kube/config
-
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
@@ -40,7 +35,20 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ap-south-1
 
+    - name: Install AWS CLI and kubectl
+      run: |
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        sudo ./aws/install
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/
+
+    - name: Update kubeconfig for EKS
+      run: |
+        aws eks update-kubeconfig --name my-cluster --region ap-south-1
+
     - name: Deploy to Kubernetes
       run: |
-        kubectl apply -f k8s/deployment.yaml --validate=false
+        kubectl apply -f k8s/deployment.yaml
         kubectl apply -f k8s/service.yaml
