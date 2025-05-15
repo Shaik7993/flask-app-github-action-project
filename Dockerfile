@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-RUN pip install 
+RUN pip install flask requests
 
 COPY . .
 
